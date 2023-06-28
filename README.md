@@ -18,7 +18,7 @@ Este proyecto implementa el juego de Tic Tac Toe en un entorno web utilizando te
 
 ## Demo
 
-Puedes probar el juego en acción visitando [este enlace](https://example.com).
+Puedes probar el juego en acción visitando [este enlace](https://pcosin.github.io/tic-tac-toe/).
 
 ## Capturas de pantalla
 
