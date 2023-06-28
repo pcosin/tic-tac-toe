@@ -1,4 +1,3 @@
-let originalBoard;
 const humanPlayer = "O";
 const aiPlayer = "X";
 const winningPositions = [
@@ -12,77 +11,109 @@ const winningPositions = [
   [2, 4, 6],
 ];
 
-const $square = document.querySelectorAll(".square");
+const squares = Array.from(document.getElementsByClassName("square"));
+const scoreXElement = document.getElementById("scoreX");
+const scoreOElement = document.getElementById("scoreO");
+
+let originalBoard;
+let gameOver = false;
+let scoreX = 0;
+let scoreO = 0;
 
 startGame();
 
 function startGame() {
-  originalBoard = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-  for (let i = 0; i < $square.length; i++) {
-    $square[i].innerText = "";
-    $square[i].addEventListener("click", turnClick, false);
-  }
+  originalBoard = Array.from(Array(9).keys());
+  gameOver = false;
+  squares.forEach(square => {
+    square.innerText = "";
+    square.classList.remove("square--X", "square--O", "winner");
+    square.addEventListener("click", turnClick);
+  });
 }
 
-// Resto del código...
-
-function turnClick(square) {
-  if (typeof originalBoard[square.target.id] === "number") {
-    turn(square.target.id, humanPlayer);
-    setTimeout(() => {
-      if (!checkTie()) turn(bestSpot(), aiPlayer);
-    }, 400);
+function turnClick(event) {
+  if (!gameOver) {
+    const square = event.target;
+    const squareId = parseInt(square.id);
+    if (typeof originalBoard[squareId] === "number") {
+      turn(squareId, humanPlayer);
+      if (!gameOver && !checkTie()) {
+        setTimeout(() => {
+          turn(bestSpot(), aiPlayer);
+        }, 200);
+      }
+    }
   }
 }
 
 function turn(squareId, player) {
-  console.log(player);
   originalBoard[squareId] = player;
-  if (player === "O") {
-    console.log(squareId);
-    document.getElementById(squareId).classList.add("square--O");
-  } else {
-    console.log(squareId);
-    document.getElementById(squareId).classList.add("square--X");
-  }
+  const square = document.getElementById(squareId.toString());
+  square.classList.add(`square--${player}`);
+
   let gameWon = checkWin(originalBoard, player);
   if (gameWon) {
-    gameOver(gameWon);
+    gameOver = true;
+    highlightWinner(gameWon);
+    updateScore(gameWon.player);
+    setTimeout(() => {
+      startGame();
+    }, 900);
+  } else if (checkTie()) {
+    gameOver = true;
+    setTimeout(() => {
+      startGame();
+    }, 900);
   }
 }
 
 function checkWin(board, player) {
-  let plays = board.reduce(
-    (acc, element, index) => (element === player ? acc.concat(index) : acc),
-    []
-  );
+  const plays = board.reduce((acc, element, index) => {
+    if (element === player) {
+      acc.push(index);
+    }
+    return acc;
+  }, []);
+
   let gameWon = null;
-  for (let [index, win] of winningPositions.entries()) {
-    if (win.every((elem) => plays.indexOf(elem) > -1)) {
-      gameWon = { index: index, player: player };
+  for (const [index, win] of winningPositions.entries()) {
+    if (win.every(elem => plays.includes(elem))) {
+      gameWon = { index, player };
       break;
     }
   }
   return gameWon;
 }
 
-function gameOver(gameWon) {
-  for (let index of winningPositions[gameWon.index]) {
-    const element = document.getElementById(index);
-
-    element.classList.remove("square--X", "square--O", "winner");
-
-    if (gameWon.player === humanPlayer) {
-      element.classList.add("square--O", "winner");
-    } else {
-      element.classList.add("square--X", "winner");
-    }
+function highlightWinner(gameWon) {
+  const { index, player } = gameWon;
+  for (const elem of winningPositions[index]) {
+    document.getElementById(elem.toString()).classList.add("winner");
   }
-  for (let i = 0; i < $square.length; i++) {
-    $square[i].removeEventListener("click", turnClick, false);
-  }
+  squares.forEach(square => {
+    square.removeEventListener("click", turnClick);
+  });
+}
 
-  // declareWinner(gameWon.player == humanPlayer ? "You win!" : "You lose.");
+function updateScore(player) {
+  if (player === "X") {
+    scoreX++;
+    scoreXElement.textContent = scoreX;
+  } else if (player === "O") {
+    scoreO++;
+    scoreOElement.textContent = scoreO;
+  }
+}
+
+function checkTie() {
+  if (originalBoard.every(element => typeof element !== "number")) {
+    squares.forEach(square => {
+      square.removeEventListener("click", turnClick);
+    });
+    return true;
+  }
+  return false;
 }
 
 function bestSpot() {
@@ -92,25 +123,5 @@ function bestSpot() {
 }
 
 function getEmptySquares() {
-  return Array.from(document.getElementsByClassName("square"))
-    .filter(
-      (square) => !square.classList.contains("square--X") && !square.classList.contains("square--O")
-    )
-    .map((square) => parseInt(square.id));
-}
-
-// function declareWinner(string) {
-//   alert(string);
-// }
-
-function checkTie() {
-  if (getEmptySquares().length == 0) {
-    for (var i = 0; i < $square.length; i++) {
-      $square[i].style.backgroundColor = "green";
-      $square[i].removeEventListener("click", turnClick, false);
-    }
-    // declareWinner("Tie Game!");
-    return true;
-  }
-  return false;
+  return originalBoard.filter(element => typeof element === "number");
 }
